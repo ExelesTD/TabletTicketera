@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="format-detection" content="telephone=no" />
+    <meta name="msapplication-tap-highlight" content="no" />
+    <meta name="viewport" content="user-scalable=no, initial-scale=1, maximum-scale=1, minimum-scale=1, width=device-width" />
+    <!-- This is a wide open CSP declaration. To lock this down for production, see below. -->
+    <meta http-equiv="Content-Security-Policy" content="default-src * 'unsafe-inline'; style-src 'self' 'unsafe-inline'; media-src *" />
+    <!-- Good default declaration:
+    * gap: is required only on iOS (when using UIWebView) and is needed for JS->native communication
+    * https://ssl.gstatic.com is required only on Android and is needed for TalkBack to function properly
+    * Disables use of eval() and inline scripts in order to mitigate risk of XSS vulnerabilities. To change this:
+        * Enable inline JS: add 'unsafe-inline' to default-src
+        * Enable eval(): add 'unsafe-eval' to default-src
+    * Create your own at http://cspisawesome.com
+    -->
+    <!-- <meta http-equiv="Content-Security-Policy" content="default-src 'self' data: gap: 'unsafe-inline' https://ssl.gstatic.com; style-src 'self' 'unsafe-inline'; media-src *" /> -->
+
+    <link rel="stylesheet" type="text/css" href="css/index.css" />
+	<link rel="stylesheet" type="text/css" href="css/modal.css" />
+	<script src="http://code.jquery.com/jquery-1.9.1.js"></script>
+	<script src="http://code.jquery.com/ui/1.11.0/jquery-ui.js"></script> 
+    <title>Menu de Opciones</title>
+</head>
+
+<body onload="onDeviceReady()">
+    <div class="inicio">
+		<div style="text-align: center;">
+			<button id="botonqr" onClick="goToQr()">Lector de Codigo QR</button>
+			<button id="myBtn" style="margin-top: 10px">Volver</button>
+		</div>
+		
+    </div>
+	<!-- The Modal -->
+	<div id="myModal" class="modal">
+
+	  <!-- Modal content -->
+	  <div class="modal-content">
+		<span class="close">&times;</span>
+		<h1  style="font-size: 17px; text-align: left; margin-left: 5%;">Pin</h1>
+		<input id="pinCont" style="width: 70%; height: 20px; margin-top: 10px; border-style: solid;  margin-left: 5%;"></input>
+		<button onclick="loginCompleto()" style="width: 30%; height: 20px; margin-top: 40px; margin-left: 5%;">Aceptar</button>
+	  </div>
+
+	</div>
+    <script type="text/javascript" src="cordova.js"></script>
+	<script type="text/javascript" src="js/modal.js"></script>
+	<script type="text/javascript" src="js/scanerQr.js"></script>
+    <script type="text/javascript" src="js/index.js"></script>
+    <script type="text/javascript">
+        app.initialize();		
+		document.addEventListener("backbutton", onBackKeyDown, false);
+		
+
+		// Handle the back button
+		//
+		function onBackKeyDown() {
+			volverBoton();
+		}
+		function goToHistorial(){
+			console.log("paso por aca");
+			window.location = "historial.html";
+		}
+		function goToTerminosCondiciones(){
+			console.log("paso por aca");
+			window.location = "terminosYCondiciones.html";
+		}
+		function goToQr(){ 
+				cordova.plugins.barcodeScanner.scan( 
+					function (result) {
+						flag = false;
+						var flagCargado = false;
+						revisarFecha(result.text,flag); 						
+						if(flag == true){
+							//alert("Entro");
+							revisarSiYaGeneroTicket(result.text,flagCargado);							
+						}
+						else{
+							if(result.cancelled){
+								
+							}
+							else{
+								alert("El codigo caduco");
+								//goToQr();
+							}
+						}
+					}, 
+					function (error) { 
+						notificacion("Ha ocurrido un error al escanear."); 
+					},
+					{
+						  "preferFrontCamera" : false,
+						  "saveHistory": true,
+						  "showFlipCameraButton" : true
+					  }
+				); 
+			};
+			function revisarFecha(qrInput,flags){
+			var fecha = new Date();
+			var dia = fecha.getDate();
+			var hora = fecha.getHours();
+			var minutos = fecha.getMinutes();
+			console.log(dia,hora,minutos);
+			//alert(fecha);
+			//alert("pepepep");
+			var qr = qrInput;
+			var diaQr;
+			obtenerDia(qr,diaQr);
+			var horaQr;
+			obtenerHora(qr,horaQr);
+			var minutosQr;
+			obtenerMinuto(qr,minutosQr);
+			//alert(diaQr + horaQr + minutosQr);
+			if(dia == diaQr){
+				if(horaQr >= hora){
+					if(minutosQr >= minutos){
+						flag = true;
+						//alert(flag);
+						return flag;
+						
+					}
+					else{
+						flag = false;
+						//alert(flag);
+						return flag;
+					}
+				}
+				else{
+					flag = false;
+					//alert(flag);
+					return flag;
+				}
+			}
+			else{
+				flag = false;
+				//alert(flag);
+				return flag;
+			}
+			
+			
+			function obtenerDia(qr,dia){
+				var indiceDia = qr.search("/") + 1;
+				var indiceDiaFinal = qr.search("-");
+				diaQr = qr.substring(indiceDia,indiceDiaFinal);
+				return diaQr;
+			}
+			function obtenerHora(qr,hora){
+				var indiceInicio = qr.search("-") + 1;
+				var indiceFinal = qr.search(":");
+				horaQr = qr.substring(indiceInicio,indiceFinal);
+				return horaQr;
+			}
+			function obtenerMinuto(qr,minutos){
+				var indiceInicio = qr.search(":") + 1;
+				var indiceFinal = qr.search("-");
+				minutosQr = qr.substring(indiceInicio);
+				return minutosQr;
+			}
+			
+		}
+		
+		function revisarSiYaGeneroTicket(codigoQr, flagh){
+			//alert("pepe");
+			var flagCargado = false;
+			var qr = codigoQr;
+			var usuarioIndice = codigoQr.search("/");
+			var usuarioQr = codigoQr.substring(0,usuarioIndice);
+			//alert(usuarioQr);
+			$.ajax({
+				data: {usuario: usuarioQr},
+				url: "https://pruebas2exefd.000webhostapp.com/obtenerHistorial.php",//"http://www.media.formandome.es/phonegap/tutorial/futbolistas.php",//urlServicio,
+				dataType: "json",				
+				beforeSend: function () {
+					//Mostramos Ventana de Espera
+				},
+				success: function (response) {
+					console.log("Usuarios = ", response);
+					//alert("pepe");
+					//flagCargado = false;
+					revisarFecha(usuarioQr,qr,response, flagh);
+					console.log("Flag final: " + flagCargado);
+					//return flagCargado;
+				},
+				error: function (jqXHR, textStatus, errorThrown, error) {
+				/*alert(jqXHR);
+				alert(textStatus);
+				alert(errorThrown);
+				alert(error);*/
+				}
+			});
+			
+			function revisarFecha(usuarioCargaddo,codigo, lista, flap){
+				//alert("ebtri");
+				var array = lista;
+				var fechaDate = new Date();
+				//flagCargado = false;
+				var usuario = usuarioCargaddo;
+				//alert("Usuario 2" + usuario);
+				//usuario = "1569534420";
+				console.log("FechaDate" + fechaDate);
+				for(var i = 0; i < array.length; i++)
+				{
+					if(usuario == array[i].Usuario){
+						var flagFecha = false;
+						var fechaTabla = array[i].Fecha;
+						//alert("f " + fechaTabla);
+						console.log("FechaDate" + fechaTabla);
+						verificarFecha(fechaDate, fechaTabla, flagFecha);
+						console.log("Flag Fecha al salir " + flagFecha);
+						//alert(flagFecha);
+						if(flagFecha == true){
+							flagCargado = true;
+						}
+					}
+					else{
+						flagCargado = false;
+					}
+				}
+				
+				if(flagCargado == false){
+					alert("Imprimiendo codigo...");
+					guardarEnHistorial(usuario,fechaDate,"Shell");
+					goToQr();
+				}
+				else{
+					alert("Ya se imprimio un ticket hoy");
+					goToQr();
+				}
+				
+				
+				function verificarFecha(fechaActual, fechaTabla, flage){
+					var fechaActual1 = new Date();
+					fechaActual1 = fechaActual;
+					console.log("Fecha Actual: "+ fechaActual);
+					var fechaDia = fechaActual1.getDate();
+					var fechaMes = fechaActual1.getMonth();
+					fechaMes = fechaMes + 1;
+					var fechaAnio = fechaActual1.getFullYear();
+					console.log(fechaDia + "" + fechaMes + "" + fechaAnio);
+					var indiceFechaAnio = fechaTabla.search("-");
+					var anioFechaTabla =  fechaTabla.substring(0,indiceFechaAnio);
+					fechaTabla = fechaTabla.substring(indiceFechaAnio + 1);
+					
+					var indiceFechaMes = fechaTabla.search("-");
+					var mesFechaTabla =  fechaTabla.substring(0,indiceFechaMes);
+					fechaTabla = fechaTabla.substring(indiceFechaMes + 1);				
+					
+					var diaFechaTabla =  fechaTabla;
+					
+					if(parseInt(fechaAnio) == parseInt(anioFechaTabla)){
+						if(parseInt(fechaMes) == parseInt(mesFechaTabla)){
+							if(parseInt(fechaDia) == parseInt(diaFechaTabla)){
+								flagFecha = true;
+							}
+							else{
+								flagFecha = false;
+							}
+						}
+						else{
+							flagFecha = false;
+						}
+					}
+					else{
+						flagFecha = false;
+					}
+					return flagFecha;
+				}
+			}			
+				
+		}
+		
+		function guardarEnHistorial(usuarioHistorial, fechaHistorial, estacionHistorial){
+			
+			var fechaActualHitorial = new Date();
+			fechaActualHitorial = fechaHistorial;
+			var fechaDia = fechaActualHitorial.getDate();
+			var fechaMes = fechaActualHitorial.getMonth();
+			fechaMes = fechaMes + 1;
+			var fechaAnio = fechaActualHitorial.getFullYear();
+			var fechaActualString = fechaAnio + "-" + fechaMes + "-" + fechaDia;
+			alert("Se imprimio con exito");
+			$.ajax({
+				data: {usuario: usuarioHistorial, estacion: estacionHistorial, fecha: fechaActualString},
+				url: "https://pruebas2exefd.000webhostapp.com/guardarHistorial.php",//"http://www.media.formandome.es/phonegap/tutorial/futbolistas.php",//urlServicio,
+				dataType: "json",				
+				beforeSend: function () {
+					//Mostramos Ventana de Espera
+				},
+				success: function (response) {
+					alert("Perfecto");
+				},
+				error: function (jqXHR, textStatus, errorThrown, error) {
+				/*alert(jqXHR);
+				alert(textStatus);
+				alert(errorThrown);
+				alert(error);*/
+				}
+			});
+		
+		}
+    </script>
+</body>
+
+</html>

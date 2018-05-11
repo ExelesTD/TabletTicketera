@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="format-detection" content="telephone=no" />
+    <meta name="msapplication-tap-highlight" content="no" />
+    <meta name="viewport" content="user-scalable=no, initial-scale=1, maximum-scale=1, minimum-scale=1, width=device-width" />
+    <meta http-equiv="Content-Security-Policy" content="default-src * 'unsafe-inline'; style-src 'self' 'unsafe-inline'; media-src *" />    
+    <link rel="stylesheet" type="text/css" href="css/index.css" />
+	
+    <title>Estaciones</title>
+</head>
+
+<body">
+    <div class="inicio">
+        <h1  style="font-size: 17px; text-align: left; margin-left: 5%;">Nombre de la Estacion</h1>
+		<div style="text-align: left;">
+		<input id="estacion" style="width: 70%; height: 20px; margin-top: 10px; border-style: solid;  margin-left: 5%;"></input>
+		</div>
+		<h1  style="font-size: 17px; margin-top: 20px; text-align: left; margin-left: 5%;">Pin de Ingreso</h1>
+		<div style="text-align: left;">
+		<input id="pin" style="width: 30%; height: 20px; margin-top: 10px; border-style: solid;  margin-left: 5%; "></input>
+		</div>
+		<div style="text-align: left;">		
+		<button onclick="llamarTabla()" style="width: 30%; height: 20px; margin-top: 40px; margin-left: 5%;">Ingresar</button>		
+		</div>
+		
+    </div>
+     <script type="text/javascript" src="cordova.js"></script>
+    <script type="text/javascript" src="js/index.js"></script>
+	<script type="text/javascript" src="http://code.jquery.com/jquery-1.9.1.js"></script>
+	<script type="text/javascript" src="http://code.jquery.com/ui/1.11.0/jquery-ui.js"></script> 
+    <script type="text/javascript">		
+		document.addEventListener("backbutton", onBackKeyDown, false);		
+		function onBackKeyDown() 
+		{ 
+		  mainView.router.back(); 
+		}
+        app.initialize();		
+		function llamarTabla(){
+			$.ajax({
+				type: 'GET',
+				url: "https://pruebas2exefd.000webhostapp.com/estacionesExistentes.php",//"http://www.media.formandome.es/phonegap/tutorial/futbolistas.php",//urlServicio,
+				dataType: "json",
+				beforeSend: function () {
+					//Mostramos Ventana de Espera
+				},
+				success: function (response) {
+					console.log("Estaciones = ", response);
+					var estacion = document.getElementById("estacion").value;
+					var pin = document.getElementById("pin").value;
+					var existe = false;
+					for(var i = 0; i<response.length; i++){
+						var estacionTabla = response[i].Estacion;
+						var pinTabla = response[i].Pin;
+						if(estacion == estacionTabla && pin == pinTabla){
+							existe = true;
+						}
+					}
+					inicioCorrecto(existe);
+				},
+				error: function (jqXHR, textStatus, errorThrown, error) {
+				alert(jqXHR);
+				alert(textStatus);
+				alert(errorThrown);
+				alert(error);
+				}
+			});
+		}
+		
+		function inicioCorrecto(check){
+			if(check == true){
+				localStorage.setItem("Estacion",document.getElementById("estacion").value);
+				localStorage.setItem("Contraseña",document.getElementById("pin").value);
+				window.location = "pantallaInicio.html";
+			}
+			else{
+				document.getElementById("estacion").style.backgroundColor = "red";
+				document.getElementById("pin").style.backgroundColor = "red";
+				alert("El pin no coincide con la estacion");
+			}
+		}
+    </script>
+</body>
+
+</html>
